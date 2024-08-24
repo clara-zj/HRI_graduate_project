@@ -1,0 +1,17 @@
+
+
+# NUC
+ssh diablo@192.168.31.10
+
+# ResperryPie
+ssh diablo@192.168.31.132
+
+# push files NUC
+scp -r /home/clara/cabo_ros2/src/* diablo@192.168.31.10:/home/diablo/cabo_ros2/src
+
+# push files ResperryPie
+scp -r /home/clara/cabo_ros2/src/* diablo@192.168.31.132:/home/diablo/cabo_ros2/src
+
+ros2 topic list
+
+sudo shutdown -h now

@@ -1,0 +1,11 @@
+# rclpy
+pygame
+pyaudio
+numpy
+soundfile
+whisper
+torch
+torchvision
+opencv-python
+# pyrealsense2
+

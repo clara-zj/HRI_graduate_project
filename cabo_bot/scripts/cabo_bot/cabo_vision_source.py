@@ -165,8 +165,8 @@ if __name__ == '__main__':
     # test_multi_threading()
 
 
-VisionSource = RealSensePipelineSource
+# VisionSource = RealSensePipelineSource
 # VisionSource = RealSenseROSTopicSource
-# VisionSource = WebcamSource
+VisionSource = WebcamSource
 
 

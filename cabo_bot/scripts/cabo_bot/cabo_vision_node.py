@@ -25,7 +25,7 @@ class CaboVisionNode(Node):
         self.data_source = data_source
         self.command_publisher = self.create_publisher(String, 'vision_command', qos_profile_sensor_data)
         self.image_publisher = self.create_publisher(Image, 'vision_display', qos_profile_sensor_data)
-        self.bridge = CvBridge()  # 创建CvBridge实例
+        self.bridge = CvBridge()  
 
         self.person_detection_system = person_detection_system
         self.binded = False

@@ -3,6 +3,8 @@ import numpy as np
 import soundfile as sf
 import whisper
 import threading
+import csv
+from datetime import datetime
 
 import os
 os.environ['RCUTILS_CONSOLE_OUTPUT_FORMAT'] = '[{severity}] [{name}]: {message}'
@@ -30,6 +32,7 @@ class AudioSegmenter:
         os.makedirs(self.record_dir, exist_ok=True)
 
         self.model = whisper.load_model("base.en") 
+        self.csv_file_path = os.path.expanduser('~/cabo_ros2/src/test_record/voice.csv')
 
 
     def initialize_stream(self):
@@ -104,6 +107,7 @@ class AudioSegmenter:
                             segment_length = (record_end - record_start) * self.CHUNK / self.RATE
 
                             if segment_length > self.MIN_SEGMENT_LENGTH:
+                                start_time = datetime.now()
                                 self.segments.append((record_start, record_end))
 
                                 # Save the segment immediately
@@ -115,8 +119,26 @@ class AudioSegmenter:
                                 print(f"\nSegment {len(self.segments)} length: {segment_length:.2f} seconds")
                                 result = self.model.transcribe(segment_path, language="en")
                                 print(f"Recognized Text for Segment {len(self.segments)}: {result['text']}")
-                                self.on_text_recognized(result['text'])
+
+
+                                command = self.on_text_recognized(result['text'])
                                 os.remove(segment_path)
+
+
+                                end_time = datetime.now()
+                                time_diff = (end_time - start_time).total_seconds()
+
+                                os.makedirs(os.path.dirname(self.csv_file_path), exist_ok=True)
+                                with open(self.csv_file_path, mode='a', newline='') as csv_file:
+                                    csv_writer = csv.writer(csv_file)
+                                    csv_writer.writerow([
+                                        f"{start_time}",
+                                        f"{end_time}",
+                                        f"{time_diff:.2f}",
+                                        result['text'],
+                                        command
+                                    ])
+
 
                             # Remove already processed frames from all_audio_frames to save memory
                             self.all_audio_frames = self.all_audio_frames[record_end:]

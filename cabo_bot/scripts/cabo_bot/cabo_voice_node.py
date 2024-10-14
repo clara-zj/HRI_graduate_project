@@ -49,7 +49,7 @@ class CaboVoiceNode(Node, AudioSegmenter):
                 msg.data = value
                 self.command_publisher.publish(msg)
                 self.get_logger().info(f"Published command: {value}")
-                return
+                return key
 
 
 def main(args=None):

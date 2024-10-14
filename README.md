@@ -12,3 +12,9 @@
 
 ## Change vision input source
 1. Change the last 3 lines of code in the 'cabo_vision_source.py' file, and re-compile.
+
+## Vision input source
+- If using pipeline source, must start vision node on the same computer of the depth camera.
+- If using ROS2 source, any where is ok. However, this is node is not recommended when testing with the real robot, as the latency is significant.
+- If using webcam source, anywhere is ok. Using this when testing without a robot, and for assisting the development of other nodes.
+

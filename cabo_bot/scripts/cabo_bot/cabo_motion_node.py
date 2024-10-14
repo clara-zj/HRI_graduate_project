@@ -5,6 +5,9 @@ from std_msgs.msg import String
 from motion_msgs.msg import MotionCtrl
 import time
 from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import QoSProfile, LivelinessPolicy, ReliabilityPolicy
+from rclpy.duration import Duration
+import csv
 
 from cabo_bot.cabo_constants import *
 from cabo_bot.cabo_motion_diablo import CaboMotionDiablo
@@ -26,19 +29,45 @@ class CaboMotionNode(Node):
             'cabo_command',
             self.state_callback,
             qos_profile_sensor_data
+            # qos_profile
         )
 
+        self.TRACKING = False
+        self.state_subscription_timer = self.create_timer(0.5, self.check_subscription_timeout)
+        self.last_received_time = self.get_clock().now()
+        self.subscription_timeout = 1.0  # seconds
+
         self.get_logger().info("CaboMotionNode has been started.")
+        self.csv_file_path = os.path.expanduser('~/cabo_ros2/src/test_record/disconnection_times.csv')
 
     def report_finish(self):
         msg = String()
         msg.data = CMD_MOTION_2_STATE_SHORT_FINISHED
         self.command_publisher.publish(msg)
         self.get_logger().info(f"Published command: {CMD_MOTION_2_STATE_SHORT_FINISHED}")
+    
+    def check_subscription_timeout(self):
+        current_time = self.get_clock().now()
+        time_diff = (current_time - self.last_received_time).nanoseconds / 1e9
+        if self.TRACKING and time_diff > self.subscription_timeout:
+            self.get_logger().warn(f"No messages received from 'cabo_command' for more than 1 seconds. Assuming disconnection. Last received {time_diff:.2f} seconds ago.")
+            # Handle disconnection here, e.g., switch to a safe state
+            self.cmd.on_standby()  # Example: Switch to standby mode
+            self.TRACKING = False
+
+            # Write time_diff to CSV file
+            os.makedirs(os.path.dirname(self.csv_file_path), exist_ok=True)
+            with open(self.csv_file_path, mode='a', newline='') as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow([f"{time_diff:.2f}"])
+
 
     def state_callback(self, msg):
+        self.last_received_time = self.get_clock().now()  # Update last received time
+
         # stand by
         if msg.data == CMD_STATE_2_MOTION_STANDBY:
+            self.TRACKING = False
             self.cmd.on_standby()
         elif msg.data == CMD_STATE_2_MOTION_SIT:
             self.cmd.on_sit()
@@ -71,11 +100,10 @@ class CaboMotionNode(Node):
             if len(texts) == 1:
                 texts = texts[0]
             if len(texts) == 3 and texts[0] == 'FOLLOW':
+                self.TRACKING = True
                 print('Track Mode')
                 turn_left, forward = texts[1:]
                 self.cmd.on_follow(int(turn_left), int(forward))
-            else:
-                print(f'incorrect msg: [{texts}] !!!!!!!!')
 
         self.get_logger().info(f"Received state: {msg.data}")
 
